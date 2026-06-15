@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const login = async (req, res) => {
@@ -21,13 +22,21 @@ const login = async (req, res) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Create session
-        req.session.userId = user.id;
-        req.session.roleId = user.role_id;
-        
         await User.updateLastLogin(user.id);
 
-        res.json({ message: 'Logged in successfully', roleId: user.role_id });
+        // ১. পাসওয়ার্ড সঠিক হলে টোকেন তৈরি করা হবে
+        const token = jwt.sign(
+            { userId: user.id, roleId: user.role_id }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' }
+        );
+
+        // ২. সাকসেস মেসেজের সাথে টোকেনটিও ফ্রন্টএন্ডে পাঠিয়ে দেওয়া হবে
+        return res.status(200).json({
+            message: '✅ Login Successful!',
+            token: token,
+            user: { email: user.username, roleId: user.role_id }
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -35,13 +44,8 @@ const login = async (req, res) => {
 };
 
 const logout = (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return res.status(500).json({ error: 'Could not log out' });
-        }
-        res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out successfully' });
-    });
+    // JWT এর ক্ষেত্রে লগআউট সাধারণত ক্লায়েন্ট সাইডে টোকেন ডিলিট করে করা হয়
+    res.json({ message: 'Logged out successfully' });
 };
 
 module.exports = {
