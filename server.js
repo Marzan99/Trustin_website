@@ -36,6 +36,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/users', userRoutes);
 
+// Default route (এটি যোগ করুন)
+app.get('/', (req, res) => {
+    res.send('Trustin Backend API is running successfully! 🚀');
+});
+
 // Serve uploaded images statically (but requires authentication to view if accessed directly)
 // Note: In a highly secure system, images shouldn't be served statically via express.static
 // if they need to be protected. Instead, a dedicated route with `authenticate` middleware
